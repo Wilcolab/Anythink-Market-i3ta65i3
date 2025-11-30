@@ -8,9 +8,12 @@ from app.database.db_manager import (
 )
 from app.models.llm_service import LLMService
 from fastapi.security import OAuth2PasswordBearer
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 router = APIRouter()
 llm_service = LLMService()
+limiter = Limiter(key_func=get_remote_address)
 
 class QueryRequest(BaseModel):
     query: str
@@ -31,6 +34,7 @@ async def get_optional_user(authorization: Optional[str] = Header(None)):
     
     return None
 
+@limiter.limit('10/minute')
 @router.post("/secure-query", response_model=QueryResponse)
 async def secure_query(
     request: QueryRequest,
